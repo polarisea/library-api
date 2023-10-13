@@ -2,21 +2,45 @@ const { model, Schema } = require("mongoose");
 
 const schema = new Schema(
   {
+    role: {
+      type: Number,
+      default: 100,
+    },
     fb: {
       type: String,
-      require: true,
+      default: null,
+    },
+    google: {
+      type: String,
+      default: null,
+    },
+    email: {
+      type: String,
+      default: null,
+    },
+    password: {
+      type: String,
+      default: null,
     },
     name: {
       type: String,
-      required: true,
+      default: "No name",
+    },
+    DOB: {
+      type: Date,
+      default: null,
     },
     picture: {
       type: String,
-      require: true,
+      default: null,
     },
-    role: {
-      type: Number,
-      default: 0,
+    address: {
+      type: String,
+      default: null,
+    },
+    phone: {
+      type: String,
+      default: null,
     },
     createdAt: {
       type: Date,

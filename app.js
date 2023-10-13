@@ -5,10 +5,17 @@ const certificate = fs.readFileSync("./sslcert/certificate.crt", "utf8");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const bodyParser = require("body-parser");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
-const { PORT, MONGODB_URL } = require("./constants");
-const authApi = require("./routes/auth.route");
+const {
+  PORT,
+  MONGODB_URL,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+} = require("./constants");
+
+const authApi = require("./routes/auth");
 const BookApi = require("./routes/book.route");
 const CategoryApi = require("./routes/category.route");
 const AuthorApi = require("./routes/author.route");
@@ -21,8 +28,6 @@ const app = express();
 const httpsServer = https.createServer(credentials, app);
 
 app.use(cors());
-// app.use(bodyParser.urlencoded({ extended: false }));
-// app.use(bodyParser.json());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static("public"));
 

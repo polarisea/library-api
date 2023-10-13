@@ -1,5 +1,5 @@
 const api = require("express").Router();
-const { validToken } = require("../middlewares/auth.middleware");
+const { validToken } = require("../middlewares/auth");
 const {
   validValue,
   validUser,
