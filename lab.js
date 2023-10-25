@@ -2,6 +2,21 @@ const axios = require("axios");
 const { OAuth2Client } = require("google-auth-library");
 const { GOOGLE_CLIENT_ID } = require("./constants");
 const client = new OAuth2Client();
+const { faker } = require("@faker-js/faker");
+const { setShedule } = require("./schedule");
+
+// Mỗi ngày vào mỗi 0 giờ (00:00)
+
+const {
+  categoryFactory,
+  authorFactory,
+  bookFactory,
+  contractFactory,
+  voteFactory,
+  userFactory,
+  publisherFactory,
+} = require("./faker/seed");
+
 async function verify() {
   const ticket = await client.verifyIdToken({
     idToken:
@@ -25,7 +40,7 @@ async function verifyFacebookToken(fbId, fbToken) {
           access_token: fbToken,
           fields: "name, picture",
         },
-      },
+      }
     );
     console.log(data);
     return [data.id, data.name, data.picture.data.url];
@@ -34,7 +49,37 @@ async function verifyFacebookToken(fbId, fbToken) {
   }
 }
 
-verifyFacebookToken(
-  "1957682674606990",
-  "EAAaCFYxVou0BO29JafxNhZAD8PHOUyLZCTcVV3b9t3GamTChEoZAIolYwpxcyIHFHeXo6CN3ZAbPbadN4aqGkhut58WIKSzLVevcGj9ZCEAzwbDmfQ0IiDoxdxYb3ymbiJ68JFrFeVw8nRAOoUqIrOt2PYU3ZBy4RqIT2QHYnlHHeZAaDKzFF8UqyaZAtZBZByMZBq0yvfqpQG0jozgP3EBVOFpwM9cQfgZD",
-);
+// verifyFacebookToken(
+//   "1957682674606990",
+//   "EAAaCFYxVou0BO29JafxNhZAD8PHOUyLZCTcVV3b9t3GamTChEoZAIolYwpxcyIHFHeXo6CN3ZAbPbadN4aqGkhut58WIKSzLVevcGj9ZCEAzwbDmfQ0IiDoxdxYb3ymbiJ68JFrFeVw8nRAOoUqIrOt2PYU3ZBy4RqIT2QHYnlHHeZAaDKzFF8UqyaZAtZBZByMZBq0yvfqpQG0jozgP3EBVOFpwM9cQfgZD",
+// );
+
+function migrate() {
+  const authors = authorFactory(10);
+
+  const categories = categoryFactory(15);
+
+  const publishers = publisherFactory(15);
+
+  const books = bookFactory(100, authors, categories, publishers);
+
+  const users = userFactory(100);
+
+  const contracts = contractFactory(100, books, users);
+  console.log(contracts);
+}
+
+function getRandomDateWithinLast12Months() {
+  const now = new Date();
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+  const randomTimestamp = faker.date
+    .between({ from: twelveMonthsAgo, to: now })
+    .getTime();
+  const randomDate = new Date(randomTimestamp);
+
+  return randomDate;
+}
+
+setShedule();

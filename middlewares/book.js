@@ -1,9 +1,78 @@
+const { body, check, query } = require("express-validator");
 const { isInt, isMongoId } = require("validator");
 
-const { isISODate } = require("../utils");
+const { isISODate } = require("../utils/validate");
 const BookModel = require("../models/Book.model");
-
 const sortBy = ["createdAt", "contracts", "votes", "count"];
+
+module.exports.validCreateOrUpdate = [
+  body("name").notEmpty(),
+  body("authors").notEmpty(),
+  body("authors").isArray(),
+  body("authors.*").isString(),
+  body("categories").notEmpty(),
+  body("categories").isArray(),
+  body("categories.*").isString(),
+  body("publishers").notEmpty(),
+  body("publishers").isArray(),
+  body("publishers.*").isString(),
+  body("description").notEmpty(),
+  body("description").isString(),
+  body("status").notEmpty(),
+  body("status").isInt(),
+  body("lateReturnFine").notEmpty(),
+  body("lateReturnFine").isInt({ min: 0 }),
+  body("damagedBookFine").notEmpty(),
+  body("damagedBookFine").isInt({ min: 0 }),
+  body("cover").custom((value) => {
+    if (!value) {
+      return true;
+    }
+    return body("cover").isString();
+  }),
+];
+
+module.exports.validGetOrCount = [
+  query("page").custom((value, { req }) => {
+    req.validData = {};
+    if (!value) {
+      req.validData.page = 0;
+
+      return true;
+    }
+    req.validData.page = parseInt(value) > 0 ? parseInt(value) : 0;
+    return true;
+  }),
+  query("search").custom((value, { req }) => {
+    if (value == "" || !value) {
+      req.validData.search = null;
+
+      return true;
+    }
+    req.validData.search = value;
+    return true;
+  }),
+  query("sort").custom((value, { req }) => {
+    if (!value) {
+      req.validData.sort = "contracts";
+      return true;
+    }
+    req.validData.sort = value;
+    return true;
+  }),
+  query("author").custom((value, { req }) => {
+    req.validData.author = value;
+    return true;
+  }),
+  query("category").custom((value, { req }) => {
+    req.validData.category = value;
+    return true;
+  }),
+  query("publisher").custom((value, { req }) => {
+    req.validData.publisher = value;
+    return true;
+  }),
+];
 
 module.exports.validPage = (req, res, next) => {
   const { page } = req.query;

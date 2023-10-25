@@ -8,25 +8,21 @@ const schema = new Schema(
       type: String,
       required: true,
     },
-    authors: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Author",
-      },
-    ],
+    authors: {
+      type: [String],
+      required: true,
+    },
+    publishers: {
+      type: [String],
+      required: true,
+    },
     description: {
       type: String,
       required: true,
     },
-    categories: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Category",
-      },
-    ],
-    count: {
-      type: Number,
-      default: 0,
+    categories: {
+      type: [String],
+      required: true,
     },
     cover: {
       type: String,
@@ -36,16 +32,33 @@ const schema = new Schema(
       type: Number,
       default: 0,
     },
-    votes: {
+    status: {
       type: Number,
       default: 0,
     },
+    lateReturnFine: {
+      type: Number,
+      default: 0,
+    },
+    damagedBookFine: {
+      type: Number,
+      default: 0,
+    },
+    indexedContent: {
+      type: String,
+      require: true,
+    },
+    borrowedBook: {
+      type: Number,
+      default: 0,
+    },
+
     createdAt: {
       type: Date,
       default: Date.now,
     },
   },
-  { collection: "book" },
+  { collection: "book" }
 );
 
 module.exports = model("Book", schema);

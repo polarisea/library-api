@@ -10,34 +10,27 @@ const {
 const UserModel = require("../models/User.model");
 
 module.exports.validLoginByPassword = [
-  body("email")
-    .notEmpty()
-    .withMessage("Email không được trống")
-    .isEmail()
-    .withMessage("Email không hợp lệ"),
-  body("password")
-    .notEmpty()
-    .withMessage("password không được trống")
-    .isLength({ min: 6, max: 18 })
-    .withMessage("Mật khẩu không hợp lệ"),
+  body("email").notEmpty().isEmail(),
+  body("password").notEmpty().isLength({ min: 6, max: 18 }),
 ];
 
 module.exports.validLoginByGoogle = [
   body("credential")
     .notEmpty()
-    .withMessage("credential không được trống")
     .custom(async (value, { req }) => {
       const [google, email, name, picture] = await verifyGoogleCredential(
-        value,
+        value
       );
       if (!google) throw new Error("credential không hợp lệ");
       let user = await UserModel.findOne({ google });
       if (!user) {
+        const indexedContent = `${name} ${email}`;
         user = await UserModel.create({
           google,
           email,
           name,
           picture,
+          indexedContent,
         });
       }
       req.user = user;
@@ -45,15 +38,13 @@ module.exports.validLoginByGoogle = [
 ];
 
 module.exports.validLoginByFacebook = [
-  body("fbId").notEmpty().withMessage("fbId không được bỏ trống"),
+  body("fbId").notEmpty(),
   body("accessToken")
     .notEmpty()
-    .withMessage("accessToken không được bỏ trống")
     .custom(async (value, { req }) => {
-      console.log(req.body);
       const [fb, name, picture] = await verifyFacebookToken(
         req.body.fbId,
-        value,
+        value
       );
       if (!fb) throw new Error("accessToken không hợp lệ");
       let user = await UserModel.findOne({ fb });
@@ -62,10 +53,16 @@ module.exports.validLoginByFacebook = [
           fb,
           name,
           picture,
+          indexedContent: name,
         });
       }
       req.user = user;
     }),
+];
+
+module.exports.validChangePassword = [
+  body("password").notEmpty(),
+  body("newPassword").notEmpty(),
 ];
 
 module.exports.validToken = async (req, res, next) => {

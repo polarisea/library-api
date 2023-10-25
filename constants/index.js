@@ -5,7 +5,7 @@ module.exports.MONGODB_URL = process.env.MONGODB_URL;
 module.exports.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 module.exports.JWT_SCERET_KEY = process.env.JWT_SCERET_KEY || "fdajlkfjal";
 module.exports.BCRYPT_SALT_ROUNDS = parseInt(
-  process.env.BCRYPT_SALT_ROUNDS || 4,
+  process.env.BCRYPT_SALT_ROUNDS || 4
 );
 
 module.exports.ROLES = {
@@ -23,11 +23,9 @@ module.exports.ROLES = {
 module.exports.PAGE_SIZE = 6;
 
 module.exports.CONTRACT_TYPES = {
-  requesting: 0,
-  acepted: 1,
-  pending: 2,
-  violation: 3,
-  finished: 4,
+  pending: 0,
+  violation: 1,
+  finished: 2,
 };
 
 module.exports.VOTING_VALUES = [-1, -0.5, 0, 0.5, 1];

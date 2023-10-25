@@ -21,11 +21,6 @@ module.exports.removeItemFromArray = (src, item) => {
   }
 };
 
-module.exports.isISODate = (str) => {
-  const date = new Date(str);
-  return date.toISOString() === str;
-};
-
 module.exports.convertBase64ToImage = (base64String, fileName) => {
   // Remove the data:image/<fileType>;base64 prefix
   const base64Data = base64String.replace(/^data:image\/\w+;base64,/, "");
@@ -35,4 +30,20 @@ module.exports.convertBase64ToImage = (base64String, fileName) => {
 
   // Write the buffer to a file
   fs.writeFileSync(fileName, buffer);
+};
+
+module.exports.formatString = (str) => {
+  const words = str.split(" ");
+  const capitalizedWords = words.map(
+    (word) => word.charAt(0).toUpperCase() + word.slice(1),
+  );
+  return capitalizedWords.join(" ");
+};
+
+module.exports.getUniqueArray = (arr) => {
+  const uniqueArr = arr.filter((string, index) => {
+    return arr.indexOf(string) === index;
+  });
+
+  return uniqueArr;
 };

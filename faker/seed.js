@@ -1,53 +1,68 @@
 const { faker } = require("@faker-js/faker");
-const { chooseArray, removeItemFromArray } = require("../utils/index");
+const { chooseArray, getUniqueArray, formatString } = require("../utils");
 
 module.exports.categoryFactory = (count) => {
   const data = [];
   for (let i = 0; i < count; i++) {
-    data.push({
-      title: faker.person.jobType(),
-    });
+    data.push(faker.animal.type());
   }
-  return data;
+  return getUniqueArray(data.map((v) => formatString(v)));
 };
 
 module.exports.authorFactory = (count) => {
   const data = [];
   for (let i = 0; i < count; i++) {
-    data.push({
-      name: faker.person.fullName(),
-    });
+    data.push(faker.person.fullName());
   }
-  return data;
+  return getUniqueArray(data.map((v) => formatString(v)));
 };
 
-module.exports.bookFactory = (count, authors, categories) => {
+module.exports.publisherFactory = (count) => {
+  const data = [];
+  for (let i = 0; i < count; i++) {
+    data.push(faker.company.name());
+  }
+  return getUniqueArray(data.map((v) => formatString(v)));
+};
+
+module.exports.bookFactory = (count, authors, categories, publishers) => {
   const data = [];
   for (let i = 0; i < count; i++) {
     data.push({
       name: faker.company.name(),
       authors: chooseArray(authors),
       description: faker.lorem.paragraph(),
-      categories: chooseArray(categories),
-      count: faker.number.int({ min: 1, max: 50 }),
-      contracts: 0,
+      categories: chooseArray(categories, faker.number.int({ min: 1, max: 3 })),
+      publishers: chooseArray(publishers, faker.number.int({ min: 1, max: 3 })),
+      status: faker.number.int({ min: 0, max: 2 }),
+      lateReturnFine: faker.number.int({ min: 1, max: 10 }) * 5000,
+      damagedBookFine: faker.number.int({ min: 15, max: 30 }) * 5000,
+      borrowedBook: faker.number.int({ min: 0, max: 1 }),
+      contracts: faker.number.int({ min: 0, max: 100 }),
       votes: 0,
-      createdAt: Date.now(),
+      createdAt: new Date(faker.date.past()),
     });
+    data[i].indexedContent =
+      data[i].name +
+      " " +
+      [...data[i].categories, ...data[i].authors, ...data[i].publishers].join(
+        " "
+      );
   }
   return data;
 };
 
-module.exports.contractFactory = (count, books, users) => {
+module.exports.contractFactory = (count, users, books) => {
   const data = [];
   for (let i = 0; i < count; i++) {
+    const createdAt = getRandomDateWithinLast12Months();
     data.push({
-      user: chooseArray(users)[0],
-      book: chooseArray(books)[0],
-      from: faker.date.past(),
-      to: faker.date.future(),
-      status: faker.number.int({ min: 0, max: 4 }),
-      createdAt: Date.now(),
+      user: chooseArray(users)[0]._id,
+      books: chooseArray(books, faker.number.int({ min: 1, max: 3 })),
+      from: createdAt,
+      to: new Date(faker.date.anytime()),
+      status: faker.number.int({ min: 0, max: 2 }),
+      createdAt,
     });
   }
   return data;
@@ -69,13 +84,24 @@ module.exports.userFactory = (count) => {
   const data = [];
   for (let i = 0; i < count; i++) {
     data.push({
-      fb: faker.string.numeric(16),
+      email: faker.internet.email(),
+      address: faker.location.streetAddress(),
+      phone: faker.phone.number(),
       name: faker.person.fullName(),
-      role: 0,
-      picture:
-        "https://z-p3-scontent.fhan5-9.fna.fbcdn.net/v/t1.30497-1/84628273_176159830277856_972693363922829312_n.jpg?stp=c15.0.50.50a_cp0_dst-jpg_p50x50&_nc_cat=1&ccb=1-7&_nc_sid=12b3be&_nc_ohc=9H5hxV9gHkEAX8bOfuz&_nc_ht=z-p3-scontent.fhan5-9.fna&edm=AP4hL3IEAAAA&oh=00_AfAJtmw5jJzA79e_u-_RmwX_bQeklqVOJ5zgy9WCO_oeOQ&oe=654C6B59",
-      createdAt: Date.now(),
+      role: 100,
+      createdAt: new Date(faker.date.past()),
+      contracts: faker.number.int({ min: 0, max: 50 }),
     });
   }
   return data;
 };
+
+function getRandomDateWithinLast12Months() {
+  const now = new Date();
+  const startDate = new Date();
+  startDate.setMonth(
+    startDate.getMonth() - faker.number.int({ min: 0, max: 12 })
+  );
+
+  return startDate;
+}

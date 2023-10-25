@@ -8,6 +8,15 @@ module.exports.isMongoId = (str) => {
   return mongoIdRegex.test(str);
 };
 
+module.exports.isISODate = (str) => {
+  const date = new Date(str);
+  return date.toISOString() === str;
+};
+
+module.exports.isInt = (str) => {
+  return /^\d+$/.test(str);
+};
+
 module.exports.verifyGoogleCredential = async (idToken) => {
   try {
     const ticket = await client.verifyIdToken({

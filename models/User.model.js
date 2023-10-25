@@ -1,10 +1,12 @@
 const { model, Schema } = require("mongoose");
 
+const { ROLES } = require("../constants");
+
 const schema = new Schema(
   {
     role: {
       type: Number,
-      default: 100,
+      default: ROLES.user.value,
     },
     fb: {
       type: String,
@@ -38,16 +40,24 @@ const schema = new Schema(
       type: String,
       default: null,
     },
+    contracts: {
+      type: Number,
+      default: 0,
+    },
     phone: {
       type: String,
       default: null,
+    },
+    indexedContent: {
+      type: String,
+      require: true,
     },
     createdAt: {
       type: Date,
       default: Date.now,
     },
   },
-  { collection: "user" },
+  { collection: "user" }
 );
 
 module.exports = model("User", schema);
