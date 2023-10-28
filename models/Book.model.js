@@ -32,10 +32,7 @@ const schema = new Schema(
       type: Number,
       default: 0,
     },
-    status: {
-      type: Number,
-      default: 0,
-    },
+
     lateReturnFine: {
       type: Number,
       default: 0,
@@ -48,11 +45,18 @@ const schema = new Schema(
       type: String,
       require: true,
     },
-    borrowedBook: {
+    count: {
       type: Number,
       default: 0,
     },
-
+    borrowedCount: {
+      type: Number,
+      default: 0,
+    },
+    brokenCount: {
+      type: Number,
+      default: 0,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

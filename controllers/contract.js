@@ -11,28 +11,20 @@ module.exports.create = async (req, res) => {
   if (!errors.isEmpty())
     return res.status(422).json({ errors: errors.array() });
   try {
-    const { user, books, from, to } = req.body;
+    const { book, from, to, status, indexedContent, user } = req.body;
 
     const contract = await ContractModel.create({
-      user,
-      books,
+      user: user || req.user._id,
+      book,
       from,
       to,
-      returnBookStatus: books.reduce((t, v) => {
-        t[v._id] = v.status;
-        return t;
-      }, {}),
+      status,
+      indexedContent,
     });
-    for (const bookId of books) {
-      const book = await BookModel.findById(bookId);
-      if (book.borrowedBook != 0) throw new Error("");
-    }
-    for (const bookId of books) {
-      await BookModel.findByIdAndUpdate(bookId, {
-        borrowedBook: 1,
-        $inc: { contracts: 1 },
-      });
-    }
+
+    await BookModel.findByIdAndUpdate(book, {
+      $inc: { contracts: 1, borrowedCount: -1 },
+    });
     await UserModel.findByIdAndUpdate(user, { $inc: { contracts: 1 } });
     return res.json(contract);
   } catch (error) {}
@@ -47,15 +39,19 @@ module.exports.update = async (req, res) => {
     const { id } = req.params;
     const { isFinePaid, returnBookStatus, violationCost, status, returnDate } =
       req.body;
+    const data = {};
+    data.isFinePaid = isFinePaid;
+    returnBookStatus && (data.returnBookStatus = returnBookStatus);
+    violationCost && (data.violationCost = violationCost);
+    status && (data.status = status);
+    returnDate && (data.returnDate = returnDate);
 
-    const updatedContract = await ContractModel.findByIdAndUpdate(
-      id,
-      { isFinePaid, returnBookStatus, violationCost, status, returnDate },
-      { new: true }
-    );
-    for (const bookId in returnBookStatus) {
-      await BookModel.findByIdAndUpdate(bookId, { borrowedBook: 0 });
-    }
+    const updatedContract = await ContractModel.findByIdAndUpdate(id, data, {
+      new: true,
+    });
+    await BookModel.findByIdAndUpdate(updatedContract.book, {
+      $inc: { borrowedCount: -1 },
+    });
     return res.json(updatedContract);
   } catch (error) {}
   return res.sendStatus(400);
@@ -66,14 +62,20 @@ module.exports.get = async (req, res) => {
   if (!errors.isEmpty())
     return res.status(422).json({ errors: errors.array() });
   try {
-    const { page, user, book, sort } = req.validData;
+    const { page, status, search, book, user } = req.validData;
     const query = {};
-    // user && (query.user = new Types.ObjectId(user));
-    // book && (query.book = new Types.ObjectId(book));
+    status && (query.status = status);
+    search && (query.$text = { $search: search });
+    book && (query.book = new Types.ObjectId(book));
+    user && (query.user = new Types.ObjectId(user));
     const contracts = await ContractModel.find(query)
+      .sort({ createdAt: -1 })
       .skip(page * LIMIT)
       .limit(LIMIT)
-      .populate({ path: "user", select: "_id, name" });
+      .populate([
+        { path: "user", select: "_id, name" },
+        { path: "book", select: "_id name damagedBookFine lateReturnFine" },
+      ]);
 
     return res.json(contracts);
   } catch (e) {}
@@ -81,12 +83,20 @@ module.exports.get = async (req, res) => {
 };
 
 module.exports.count = async (req, res) => {
-  const { search, user, book } = req.query;
-  const query = {};
-  user && (query.user = new Types.ObjectId(user));
-  book && (query.book = new Types.ObjectId(book));
-  const count = await ContractModel.countDocuments(query);
-  return res.json(count);
+  const errors = validationResult(req);
+  if (!errors.isEmpty())
+    return res.status(422).json({ errors: errors.array() });
+  try {
+    const { search, user, book, status } = req.validData;
+    const query = {};
+    user && (query.user = new Types.ObjectId(user));
+    book && (query.book = new Types.ObjectId(book));
+    status && (query.status = status);
+    search && (query.$text = { $search: search });
+    const count = await ContractModel.countDocuments(query);
+    return res.json(count);
+  } catch (e) {}
+  return res.sendStatus(400);
 };
 
 module.exports.statusCount = async (req, res) => {
@@ -124,8 +134,6 @@ module.exports.getContractCountInLast12Months = async (req, res) => {
       },
     ]);
     return res.json(data);
-  } catch (e) {
-    console.log(e.message);
-  }
+  } catch (e) {}
   return res.sendStatus(400);
 };

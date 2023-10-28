@@ -7,23 +7,16 @@ const sortBy = ["createdAt", "contracts", "votes", "count"];
 
 module.exports.validCreateOrUpdate = [
   body("name").notEmpty(),
-  body("authors").notEmpty(),
-  body("authors").isArray(),
+  body("authors").notEmpty().isArray(),
   body("authors.*").isString(),
-  body("categories").notEmpty(),
-  body("categories").isArray(),
+  body("categories").notEmpty().isArray(),
   body("categories.*").isString(),
-  body("publishers").notEmpty(),
-  body("publishers").isArray(),
+  body("publishers").notEmpty().isArray(),
   body("publishers.*").isString(),
-  body("description").notEmpty(),
-  body("description").isString(),
-  body("status").notEmpty(),
-  body("status").isInt(),
-  body("lateReturnFine").notEmpty(),
-  body("lateReturnFine").isInt({ min: 0 }),
-  body("damagedBookFine").notEmpty(),
-  body("damagedBookFine").isInt({ min: 0 }),
+  body("description").notEmpty().isString(),
+  body("count").notEmpty().isInt(),
+  body("lateReturnFine").notEmpty().isInt({ min: 0 }),
+  body("damagedBookFine").notEmpty().isInt({ min: 0 }),
   body("cover").custom((value) => {
     if (!value) {
       return true;

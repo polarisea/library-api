@@ -20,6 +20,9 @@ module.exports = {
     await db.createCollection("user");
     db.collection("user").createIndex({ name: "text" });
 
+    await db.createCollection("contract");
+    db.collection("contract").createIndex({ indexedContent: "text" });
+
     const authors = authorFactory(10);
     addAuthors(authors);
 
@@ -35,8 +38,8 @@ module.exports = {
     const users = userFactory(100);
     const u = await db.collection("user").insertMany(users);
 
-    const contracts = contractFactory(500, users, books);
-    await db.collection("contract").insertMany(contracts);
+    // const contracts = contractFactory(500, users, books);
+    // await db.collection("contract").insertMany(contracts);
     // const contracts = contractFactory(
     //   100,
     //   Object.values(b.insertedIds),

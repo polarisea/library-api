@@ -23,6 +23,7 @@ module.exports.get = async (req, res) => {
     author && (query.authors = author);
     publisher && (query.publishers = publisher);
     search && (query.$text = { $search: search });
+    console.log(query);
     const books = await BookModel.find(query)
       .sort({ [sort]: -1 })
       .skip(page * PAGE_SIZE)
@@ -72,7 +73,7 @@ module.exports.createOrUpdate = async (req, res) => {
       publishers,
       description,
       cover,
-      status,
+      count,
       lateReturnFine,
       damagedBookFine,
     } = req.body;
@@ -89,7 +90,7 @@ module.exports.createOrUpdate = async (req, res) => {
       indexedContent:
         name + " " + [...nAuthors, ...nCatgories, ...nPublishers].join(" "),
       description,
-      status,
+      count,
       lateReturnFine,
       damagedBookFine,
     };
@@ -117,9 +118,17 @@ module.exports.createOrUpdate = async (req, res) => {
 module.exports.statusCount = async (req, res) => {
   try {
     const data = await BookModel.aggregate([
-      { $group: { _id: "$status", count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: null,
+          totalCount: { $sum: "$count" },
+          totalBrokenCount: { $sum: "$brokenCount" },
+          totalBorrowedCount: { $sum: "$borrowedCount" },
+        },
+      },
     ]);
-    return res.json(data);
+    data[0].totalStockCount = data[0].totalCount - data[0].totalBorrowedCount;
+    return res.json(data[0]);
   } catch (e) {}
   return res.sendStatus(400);
 };

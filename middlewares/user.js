@@ -40,12 +40,21 @@ module.exports.validGet = [
     req.validData.search = value && value.length > 0 ? value : false;
     return true;
   }),
+
+  query("role").custom((value, { req }) => {
+    req.validData.role = value ? value : false;
+    return true;
+  }),
 ];
 
 module.exports.validCount = [
   query("search").custom((value, { req }) => {
     req.validData = {};
     req.validData.search = value && value.length > 0 ? value : false;
+    return true;
+  }),
+  query("role").custom((value, { req }) => {
+    req.validData.role = value ? value : false;
     return true;
   }),
 ];

@@ -42,7 +42,8 @@ module.exports.updateUser = async (req, res) => {
   if (!errors.isEmpty())
     return res.status(422).json({ errors: errors.array() });
   const user = req.user;
-  const { name, email, picture, DOB, phone, address } = req.body;
+  const { name, picture, DOB, phone, address } = req.body;
+  const email = user.fb ? req.body.email : user.email;
   const indexedContent = `${name} ${email} ${address}`.trim();
   const data = {
     name,
@@ -52,7 +53,7 @@ module.exports.updateUser = async (req, res) => {
     address,
     indexedContent,
   };
-  if (user.fb != null || user.google != null) delete data.email;
+
   if (picture) {
     const fileName = `${Date.now()}.jpg`;
     convertBase64ToImage(picture, `public/pictures/${fileName}`);

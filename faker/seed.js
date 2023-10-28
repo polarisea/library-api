@@ -28,16 +28,18 @@ module.exports.publisherFactory = (count) => {
 module.exports.bookFactory = (count, authors, categories, publishers) => {
   const data = [];
   for (let i = 0; i < count; i++) {
+    const count = faker.number.int({ min: 5, max: 25 });
     data.push({
       name: faker.company.name(),
-      authors: chooseArray(authors),
+      authors: chooseArray(authors, faker.number.int({ min: 1, max: 3 })),
       description: faker.lorem.paragraph(),
       categories: chooseArray(categories, faker.number.int({ min: 1, max: 3 })),
       publishers: chooseArray(publishers, faker.number.int({ min: 1, max: 3 })),
-      status: faker.number.int({ min: 0, max: 2 }),
       lateReturnFine: faker.number.int({ min: 1, max: 10 }) * 5000,
       damagedBookFine: faker.number.int({ min: 15, max: 30 }) * 5000,
-      borrowedBook: faker.number.int({ min: 0, max: 1 }),
+      count,
+      borrowedCount: faker.number.int({ min: 0, max: count }),
+      brokenCount: faker.number.int({ min: 0, max: count }),
       contracts: faker.number.int({ min: 0, max: 100 }),
       votes: 0,
       createdAt: new Date(faker.date.past()),
@@ -58,10 +60,10 @@ module.exports.contractFactory = (count, users, books) => {
     const createdAt = getRandomDateWithinLast12Months();
     data.push({
       user: chooseArray(users)[0]._id,
-      books: chooseArray(books, faker.number.int({ min: 1, max: 3 })),
+      book: chooseArray(books)[0]._id,
       from: createdAt,
       to: new Date(faker.date.anytime()),
-      status: faker.number.int({ min: 0, max: 2 }),
+      status: faker.number.int({ min: 0, max: 3 }),
       createdAt,
     });
   }

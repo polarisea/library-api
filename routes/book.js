@@ -19,8 +19,15 @@ api.get("/borrowed-book-count", borrowedBookCount);
 api.get("/book-in-category-count", bookInCategoryCount);
 api.get("/count", validGetOrCount, count);
 
-api.post("/", validCreateOrUpdate, createOrUpdate);
-api.patch("/:id/update", validCreateOrUpdate, createOrUpdate);
+api.post("/", validToken, validIsAdmin, validCreateOrUpdate, createOrUpdate);
+
+api.patch(
+  "/:id/update",
+  validToken,
+  validIsAdmin,
+  validCreateOrUpdate,
+  createOrUpdate
+);
 
 api.delete("/:id/delete", validToken, validIsAdmin, deleteBook);
 

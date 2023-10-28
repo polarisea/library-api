@@ -7,21 +7,10 @@ const schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    books: [
-      {
-        _id: { type: Schema.Types.ObjectId, ref: "Book", required: true },
-        name: { type: String, required: true },
-        status: { type: Number, required: true },
-        lateReturnFine: {
-          type: Number,
-          default: 0,
-        },
-        damagedBookFine: {
-          type: Number,
-          default: 0,
-        },
-      },
-    ],
+    book: {
+      type: Schema.Types.ObjectId,
+      ref: "Book",
+    },
     from: {
       type: Date,
       required: true,
@@ -42,13 +31,17 @@ const schema = new Schema(
       type: Boolean,
       default: false,
     },
-    violationCost: {
-      type: Object,
-      default: null,
-    },
     returnBookStatus: {
-      type: Object,
-      default: null,
+      type: Number,
+      default: 0,
+    },
+    indexedContent: {
+      type: String,
+      require: true,
+    },
+    violationCost: {
+      type: Number,
+      default: 0,
     },
     createdAt: {
       type: Date,

@@ -22,10 +22,11 @@ module.exports.ROLES = {
 
 module.exports.PAGE_SIZE = 6;
 
-module.exports.CONTRACT_TYPES = {
-  pending: 0,
-  violation: 1,
-  finished: 2,
+module.exports.CONTRACTS = {
+  requesting: 0,
+  pending: 1,
+  violation: 2,
+  finished: 3,
 };
 
 module.exports.VOTING_VALUES = [-1, -0.5, 0, 0.5, 1];
