@@ -4,7 +4,7 @@ const { validationResult } = require("express-validator");
 const BookModel = require("../models/Book.model");
 const ContractModel = require("../models/Contract");
 
-const { CONTRACT_TYPES, PAGE_SIZE, IMAGE_HOST } = require("../constants");
+const { CONTRACTS, PAGE_SIZE, IMAGE_HOST } = require("../constants");
 const { addAuthors, addCatgories, addPublishers } = require("../cache");
 const {
   convertBase64ToImage,
@@ -13,21 +13,62 @@ const {
 } = require("../utils");
 
 module.exports.get = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
-    const { page, search, sort, category, author, publisher } = req.validData;
+    const { page, search, sort, category, author, publisher } = req.query;
     const query = {};
     category && (query.categories = category);
     author && (query.authors = author);
     publisher && (query.publishers = publisher);
     search && (query.$text = { $search: search });
-    console.log(query);
-    const books = await BookModel.find(query)
-      .sort({ [sort]: -1 })
-      .skip(page * PAGE_SIZE)
-      .limit(PAGE_SIZE);
+
+    const books = await BookModel.aggregate([
+      {
+        $match: query,
+      },
+      {
+        $lookup: {
+          from: "contract",
+          localField: "_id",
+          foreignField: "book",
+          as: "contracts",
+        },
+      },
+      {
+        $addFields: {
+          contracts: { $size: "$contracts" },
+          borrowedCount: {
+            $size: {
+              $filter: {
+                input: "$contracts",
+                as: "contract",
+                cond: {
+                  $or: [
+                    { $eq: ["$$contract.status", CONTRACTS.pending] },
+                    {
+                      $and: [
+                        { $eq: ["$$contract.status", CONTRACTS.violation] },
+                        { $eq: ["$$contract.returnBookStatus", 0] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $sort: {
+          [sort]: -1,
+        },
+      },
+      {
+        $skip: page * PAGE_SIZE,
+      },
+      {
+        $limit: PAGE_SIZE,
+      },
+    ]);
 
     return res.json(books);
   } catch (error) {}
@@ -37,19 +78,53 @@ module.exports.get = async (req, res) => {
 module.exports.getBook = async (req, res) => {
   const { id } = req.params;
   try {
-    const book = await BookModel.findById(id);
+    const book = await BookModel.aggregate([
+      {
+        $match: { _id: new Types.ObjectId(id) },
+      },
+      {
+        $lookup: {
+          from: "contract",
+          localField: "_id",
+          foreignField: "book",
+          as: "contracts",
+        },
+      },
+      {
+        $addFields: {
+          contracts: { $size: "$contracts" },
+          borrowedCount: {
+            $size: {
+              $filter: {
+                input: "$contracts",
+                as: "contract",
+                cond: {
+                  $or: [
+                    { $eq: ["$$contract.status", CONTRACTS.pending] },
+                    {
+                      $and: [
+                        { $eq: ["$$contract.status", CONTRACTS.violation] },
+                        { $eq: ["$$contract.returnBookStatus", 0] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
     if (!book) return res.sendStatus(400);
-    return res.json(book);
+    return res.json(book[0]);
   } catch (error) {}
   return res.sendStatus(400);
 };
 
 module.exports.count = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
-    const { page, search, category, author, publisher } = req.validData;
+    const { search, category, author, publisher } = req.query;
     const query = {};
     category && (query.categories = category);
     author && (query.authors = author);
@@ -62,9 +137,6 @@ module.exports.count = async (req, res) => {
 };
 
 module.exports.createOrUpdate = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
     const {
       name,
@@ -119,6 +191,46 @@ module.exports.statusCount = async (req, res) => {
   try {
     const data = await BookModel.aggregate([
       {
+        $lookup: {
+          from: "contract",
+          localField: "_id",
+          foreignField: "book",
+          as: "contracts",
+        },
+      },
+      {
+        $addFields: {
+          brokenCount: {
+            $size: {
+              $filter: {
+                input: "$contracts",
+                as: "contract",
+                cond: { $eq: ["$$contract.returnBookStatus", 1] },
+              },
+            },
+          },
+          borrowedCount: {
+            $size: {
+              $filter: {
+                input: "$contracts",
+                as: "contract",
+                cond: {
+                  $or: [
+                    { $eq: ["$$contract.status", CONTRACTS.pending] },
+                    {
+                      $and: [
+                        { $eq: ["$$contract.status", CONTRACTS.violation] },
+                        { $eq: ["$$contract.returnBookStatus", 0] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
         $group: {
           _id: null,
           totalCount: { $sum: "$count" },
@@ -129,16 +241,6 @@ module.exports.statusCount = async (req, res) => {
     ]);
     data[0].totalStockCount = data[0].totalCount - data[0].totalBorrowedCount;
     return res.json(data[0]);
-  } catch (e) {}
-  return res.sendStatus(400);
-};
-
-module.exports.borrowedBookCount = async (req, res) => {
-  try {
-    const data = await BookModel.aggregate([
-      { $group: { _id: "$borrowedBook", count: { $sum: 1 } } },
-    ]);
-    return res.json(data);
   } catch (e) {}
   return res.sendStatus(400);
 };

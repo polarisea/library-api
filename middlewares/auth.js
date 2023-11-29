@@ -69,7 +69,6 @@ module.exports.validToken = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) return res.sendStatus(401);
   const [bearer, token] = authHeader.split(" ");
-
   if (bearer != "Bearer" || !token) return res.sendStatus(401);
   const decoded = verify(token);
   if (!decoded) return res.sendStatus(401);

@@ -1,18 +1,16 @@
 const { Types } = require("mongoose");
 const BookModel = require("../models/Book.model");
 const UserModel = require("../models/User.model");
+const NotifyModel = require("../models/Notify.model");
 
 const ContractModel = require("../models/Contract");
-const { validationResult } = require("express-validator");
+const { CONTRACTS } = require("../constants");
 const LIMIT = 6;
+const { vnDate } = require("../utils/date");
 
 module.exports.create = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
     const { book, from, to, status, indexedContent, user } = req.body;
-
     const contract = await ContractModel.create({
       user: user || req.user._id,
       book,
@@ -32,9 +30,6 @@ module.exports.create = async (req, res) => {
 };
 
 module.exports.update = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
     const { id } = req.params;
     const { isFinePaid, returnBookStatus, violationCost, status, returnDate } =
@@ -46,23 +41,54 @@ module.exports.update = async (req, res) => {
     status && (data.status = status);
     returnDate && (data.returnDate = returnDate);
 
+    const contract = await ContractModel.findById(id).populate({
+      path: "book",
+      select: "name",
+    });
+
     const updatedContract = await ContractModel.findByIdAndUpdate(id, data, {
       new: true,
     });
+
     await BookModel.findByIdAndUpdate(updatedContract.book, {
       $inc: { borrowedCount: -1 },
     });
+
+    if (
+      status == CONTRACTS.pending &&
+      contract.status == CONTRACTS.requesting
+    ) {
+      const notify = await NotifyModel.create({
+        receiver: contract.user,
+        title: "Chấp thuận yêu cầu mượn sách.",
+        content: `Yêu cầu mượn sách "${contract.book.name}" từ ngày ${vnDate(
+          contract.from
+        )} đến ${vnDate(contract.to)} của bạn được chấp thuận.`,
+      });
+    }
+    if (
+      status == CONTRACTS.violation &&
+      contract.status != CONTRACTS.violation
+    ) {
+      const notify = await NotifyModel.create({
+        receiver: contract.user,
+        title: "Thông báo vi phạm.",
+        content: `Yêu cầu mượn sách "${contract.book.name}" từ ngày ${vnDate(
+          contract.from
+        )} đến ${vnDate(
+          contract.to
+        )} của bạn đã vi phạm. Đề nghị bạn nộp phạt ${violationCost}đ.`,
+      });
+    }
+
     return res.json(updatedContract);
   } catch (error) {}
   return res.sendStatus(400);
 };
 
 module.exports.get = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
-    const { page, status, search, book, user } = req.validData;
+    const { page, status, search, book, user } = req.query;
     const query = {};
     status && (query.status = status);
     search && (query.$text = { $search: search });
@@ -83,11 +109,8 @@ module.exports.get = async (req, res) => {
 };
 
 module.exports.count = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
-    const { search, user, book, status } = req.validData;
+    const { search, user, book, status } = req.query;
     const query = {};
     user && (query.user = new Types.ObjectId(user));
     book && (query.book = new Types.ObjectId(book));
@@ -135,5 +158,48 @@ module.exports.getContractCountInLast12Months = async (req, res) => {
     ]);
     return res.json(data);
   } catch (e) {}
+  return res.sendStatus(400);
+};
+
+module.exports.cancel = async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+
+  try {
+    const deleted = await ContractModel.findOneAndDelete({
+      _id: id,
+      user: user._id,
+    });
+    if (deleted) return res.json(id);
+  } catch (error) {}
+  return res.sendStatus(400);
+};
+
+module.exports.refuse = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const contract = await ContractModel.findById(id).populate({
+      path: "book",
+      select: "name",
+    });
+    const deleted = await ContractModel.findByIdAndDelete(id);
+    console.log(id);
+    console.log(deleted);
+
+    if (deleted) {
+      const notify = await NotifyModel.create({
+        receiver: contract.user,
+        title: "Từ chối yêu cầu mượn sách.",
+        content: `Yêu cầu mượn sách "${contract.book.name}" từ ngày ${vnDate(
+          contract.from
+        )} đến ${vnDate(contract.to)} của bạn không được chấp thuận.`,
+      });
+      console.log(notify);
+      return res.json(id);
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
   return res.sendStatus(400);
 };

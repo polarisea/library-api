@@ -1,6 +1,4 @@
 const { model, Schema } = require("mongoose");
-const AuthorModel = require("./Author.model");
-const CategoryModel = require("./Category.model");
 
 const schema = new Schema(
   {
@@ -28,11 +26,6 @@ const schema = new Schema(
       type: String,
       default: null,
     },
-    contracts: {
-      type: Number,
-      default: 0,
-    },
-
     lateReturnFine: {
       type: Number,
       default: 0,
@@ -46,10 +39,6 @@ const schema = new Schema(
       require: true,
     },
     count: {
-      type: Number,
-      default: 0,
-    },
-    borrowedCount: {
       type: Number,
       default: 0,
     },

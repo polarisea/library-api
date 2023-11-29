@@ -1,5 +1,5 @@
 const api = require("express").Router();
-const { validToken } = require("../middlewares/auth");
+const { validToken, validIsAdmin } = require("../middlewares/auth");
 const {
   validCreate,
   validUpdate,
@@ -14,15 +14,29 @@ const {
   getContractCountInLast12Months,
   create,
   update,
+  cancel,
+  refuse,
 } = require("../controllers/contract");
 
-api.get("/", validGet, get);
-api.get("/count", validCount, count);
+const { executeRules } = require("../utils/validate");
+
+api.get("/", validGet, executeRules, get);
+api.get("/count", validCount, executeRules, count);
 api.get("/status-count", statusCount);
 api.get("/contract-count-in-last-12-months", getContractCountInLast12Months);
 
-api.post("/", validToken, validCreate, create);
+api.post("/", validToken, validCreate, executeRules, create);
 
-api.patch("/:id/update", validUpdate, update);
+api.patch(
+  "/:id/update",
+  validToken,
+  validIsAdmin,
+  validUpdate,
+  executeRules,
+  update
+);
+
+api.delete("/:id/refuse", validToken, validIsAdmin, refuse);
+api.delete("/:id/cancel", validToken, cancel);
 
 module.exports = api;

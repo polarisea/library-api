@@ -4,59 +4,28 @@ const { isMongoId, isISODate, isInt } = require("../utils/validate");
 const sortBy = ["createdAt", "contracts"];
 const { ROLES } = require("../constants");
 
+const {
+  setDefaultBodyValue,
+  setDefaultQueryValue,
+  checkIfExistInBody,
+  checkIfExistInQuery,
+} = require("../utils/validate");
+
 module.exports.validUpdateUser = [
-  body("email").custom((value) => {
-    if (value == null || value == undefined) return true;
-    return body("email").isEmail().withMessage("Email không hợp lệ");
-  }),
-  body("DOB").custom((value) => {
-    if (value == null || value == undefined) return true;
-    if (!isISODate(value)) throw new Error("DOB không hợp lệ");
-    return true;
-  }),
+  checkIfExistInBody("email", body("email").isEmail()),
+  checkIfExistInBody("DOB"),
 ];
 
 module.exports.validGet = [
-  query("page").custom((value, { req }) => {
-    req.validData = {};
-    if (!isInt(value)) {
-      req.validData.page = 0;
-
-      return true;
-    }
-    req.validData.page = parseInt(value) > 0 ? parseInt(value) : 0;
-    return true;
-  }),
-  query("sort").custom((value, { req }) => {
-    if (!value) {
-      req.validData.sort = "contracts";
-      return true;
-    }
-    req.validData.sort = value;
-    return true;
-  }),
-
-  query("search").custom((value, { req }) => {
-    req.validData.search = value && value.length > 0 ? value : false;
-    return true;
-  }),
-
-  query("role").custom((value, { req }) => {
-    req.validData.role = value ? value : false;
-    return true;
-  }),
+  checkIfExistInQuery("search", null, null),
+  checkIfExistInQuery("sort", null, "contracts"),
+  checkIfExistInQuery("role", query("role").isInt({ min: 0 })),
+  checkIfExistInQuery("page", query("page").isInt({ min: 0 }), 0),
 ];
 
 module.exports.validCount = [
-  query("search").custom((value, { req }) => {
-    req.validData = {};
-    req.validData.search = value && value.length > 0 ? value : false;
-    return true;
-  }),
-  query("role").custom((value, { req }) => {
-    req.validData.role = value ? value : false;
-    return true;
-  }),
+  checkIfExistInQuery("search", null, null),
+  checkIfExistInQuery("role", query("role").isInt({ min: 0 })),
 ];
 
 module.exports.validGrantPermission = [

@@ -36,3 +36,6 @@ module.exports.IMAGE_HOST = `https://localhost:3000/covers`;
 module.exports.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 
 module.exports.GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
+
+module.exports.GMAIL_USER = process.env.GMAIL_USER || "";
+module.exports.GMAIL_PASS = process.env.GMAIL_PASS || "";

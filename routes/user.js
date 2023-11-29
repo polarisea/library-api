@@ -16,17 +16,19 @@ const {
 } = require("../middlewares/user");
 
 const { validToken, validIsRoot } = require("../middlewares/auth");
+const { executeRules } = require("../utils/validate");
 
-api.get("/", validGet, get);
+api.get("/", validGet, executeRules, get);
 api.get("/:id/get", getUser);
-api.get("/count", validCount, count);
+api.get("/count", validCount, executeRules, count);
 
-api.patch("/:id/update", validToken, validUpdateUser, updateUser);
+api.patch("/:id/update", validToken, validUpdateUser, executeRules, updateUser);
 api.patch(
   "/:id/grant-permission",
   validToken,
   validIsRoot,
   validGrantPermission,
+  executeRules,
   grantPermission
 );
 

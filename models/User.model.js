@@ -40,10 +40,6 @@ const schema = new Schema(
       type: String,
       default: null,
     },
-    contracts: {
-      type: Number,
-      default: 0,
-    },
     phone: {
       type: String,
       default: null,

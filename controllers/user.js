@@ -8,18 +8,40 @@ const { convertBase64ToImage } = require("../utils");
 const { PAGE_SIZE, IMAGE_HOST } = require("../constants");
 
 module.exports.get = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
-    const { page, search, sort, role } = req.validData;
+    const { page, search, sort, role } = req.query;
     const query = {};
     search && (query.$text = { $search: search });
-    role && (query.role = role);
-    const books = await UserModel.find(query)
-      .sort({ [sort]: -1 })
-      .skip(page * PAGE_SIZE)
-      .limit(PAGE_SIZE);
+    role && (query.role = +role);
+    const books = await UserModel.aggregate([
+      {
+        $match: query,
+      },
+      {
+        $lookup: {
+          from: "contract",
+          localField: "_id",
+          foreignField: "user",
+          as: "contracts",
+        },
+      },
+      {
+        $addFields: {
+          contracts: { $size: "$contracts" },
+        },
+      },
+      {
+        $sort: {
+          [sort]: -1,
+        },
+      },
+      {
+        $skip: page * PAGE_SIZE,
+      },
+      {
+        $limit: PAGE_SIZE,
+      },
+    ]);
 
     return res.json(books);
   } catch (error) {}
@@ -38,36 +60,36 @@ module.exports.getUser = async (req, res) => {
 };
 
 module.exports.updateUser = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
-  const user = req.user;
-  const { name, picture, DOB, phone, address } = req.body;
-  const email = user.fb ? req.body.email : user.email;
-  const indexedContent = `${name} ${email} ${address}`.trim();
-  const data = {
-    name,
-    email,
-    DOB,
-    phone,
-    address,
-    indexedContent,
-  };
-
-  if (picture) {
-    const fileName = `${Date.now()}.jpg`;
-    convertBase64ToImage(picture, `public/pictures/${fileName}`);
-    data["picture"] = fileName;
-  }
   try {
-    unlinkSync(`public/pictures/${user.picture}`);
-  } catch (err) {
-    console.error("Error deleting file:", err.message);
-  }
-  const updatedUser = await UserModel.findByIdAndUpdate(user._id, data, {
-    new: true,
-  });
-  res.json(updatedUser);
+    const user = req.user;
+    const { name, picture, DOB, phone, address } = req.body;
+    const email = user.fb ? req.body.email : user.email;
+    const indexedContent = `${name} ${email} ${address}`.trim();
+    const data = {
+      name,
+      email,
+      DOB,
+      phone,
+      address,
+      indexedContent,
+    };
+
+    if (picture) {
+      const fileName = `${Date.now()}.jpg`;
+      convertBase64ToImage(picture, `public/pictures/${fileName}`);
+      data["picture"] = fileName;
+    }
+    try {
+      unlinkSync(`public/pictures/${user.picture}`);
+    } catch (err) {
+      console.error("Error deleting file:", err.message);
+    }
+    const updatedUser = await UserModel.findByIdAndUpdate(user._id, data, {
+      new: true,
+    });
+    return res.json(updatedUser);
+  } catch (e) {}
+  return res.sendStatus(400);
 };
 
 module.exports.grantPermission = async (req, res) => {
@@ -83,18 +105,17 @@ module.exports.grantPermission = async (req, res) => {
 module.exports.deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
-    const deleted = await UserModel.findByIdAndRemove(id);
-    if (deleted) return res.json(id);
+    if (id != req.user._id) {
+      const deleted = await UserModel.findByIdAndRemove(id);
+      if (deleted) return res.json(id);
+    }
   } catch (error) {}
   return res.sendStatus(400);
 };
 
 module.exports.count = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty())
-    return res.status(422).json({ errors: errors.array() });
   try {
-    const { search, role } = req.validData;
+    const { search, role } = req.query;
     const query = {};
     search && (query.$text = { $search: search });
     role && (query.role = role);
